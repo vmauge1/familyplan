@@ -6,13 +6,7 @@ import WorkSheet      from './components/WorkSheet'
 import PersoListSheet from './components/PersoListSheet'
 import PersoEditSheet from './components/PersoEditSheet'
 
-// Inject Google Font
-const link = document.createElement('link')
-link.rel  = 'stylesheet'
-link.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap'
-document.head.appendChild(link)
-
-export default function FamilyPlan() {
+export default function FamilyPlan({ user, onSignOut }) {
   const today = new Date()
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -104,11 +98,20 @@ export default function FamilyPlan() {
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: "'DM Mono',monospace" }}>
             {time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
           </span>
-          <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: synced ? '#3FB950' : '#E3B341', animation: 'pulse 1.4s infinite' }} />
-            <span style={{ fontSize: 11, color: synced ? '#3FB950' : '#E3B341', fontWeight: 600, letterSpacing: '0.04em' }}>
-              {synced ? 'Synced' : 'Demo'}
-            </span>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: synced ? '#3FB950' : '#E3B341', animation: 'pulse 1.4s infinite' }} />
+              <span style={{ fontSize: 11, color: synced ? '#3FB950' : '#E3B341', fontWeight: 600, letterSpacing: '0.04em' }}>
+                {synced ? 'Synced' : 'Demo'}
+              </span>
+            </div>
+            <button
+              onClick={onSignOut}
+              title="Se déconnecter"
+              style={{ background: 'none', border: 'none', color: C.muted, fontSize: 16, cursor: 'pointer', padding: '2px 4px' }}
+            >
+              ⎋
+            </button>
           </div>
         </div>
 
