@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { C, WORK, PERSO, MONTHS, DAYS_S, toKey, daysInMonth, firstDayOfWeek } from './lib/constants'
 import { useCalendarEvents } from './hooks/useCalendarEvents'
+import { useNotifications, notifyPartner } from './hooks/useNotifications'
 import DayCell        from './components/DayCell'
 import WorkSheet      from './components/WorkSheet'
 import PersoListSheet from './components/PersoListSheet'
@@ -17,6 +18,7 @@ export default function FamilyPlan({ user, onSignOut }) {
   const [persoSheet, setPerso] = useState(null)  // { date, mode:'list'|'edit', editItem }
 
   const { events, saveDay, synced } = useCalendarEvents()
+  useNotifications(user)
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 30000)
@@ -37,21 +39,26 @@ export default function FamilyPlan({ user, onSignOut }) {
     else setMonth(m => m + 1)
   }
 
+  const senderName = user?.email?.split('@')[0] ?? 'Quelqu\'un'
+
   const handleWorkSave = (date, data) => {
     saveDay(date, data)
     showToast('Planning mis à jour ✓')
+    notifyPartner({ senderId: user?.id, senderName, date, type: 'work', title: '' })
   }
 
   const handleAdd = (date, item) => {
     const cur = events[date] || { V: null, F: null, P: [] }
     saveDay(date, { ...cur, P: [...(cur.P || []), item] })
     showToast('Événement ajouté ✓')
+    notifyPartner({ senderId: user?.id, senderName, date, type: 'perso', title: item.title })
   }
 
   const handleEdit = (date, item) => {
     const cur = events[date] || {}
     saveDay(date, { ...cur, P: (cur.P || []).map(e => e.id === item.id ? item : e) })
     showToast('Événement modifié ✓')
+    notifyPartner({ senderId: user?.id, senderName, date, type: 'perso', title: item.title })
   }
 
   const handleDel = (date, id) => {
