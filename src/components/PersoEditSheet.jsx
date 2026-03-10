@@ -11,7 +11,8 @@ export default function PersoEditSheet({ date, item, onClose, onSave }) {
   const [title, setTitle] = useState(item?.title || '')
   const [heure, setHeure] = useState(item?.heure || '')
   const [note,  setNote]  = useState(item?.note  || '')
-  const [who,   setWho]   = useState(item?.who   || 'tous')
+  const [who,    setWho]    = useState(item?.who    || 'tous')
+  const [rappel, setRappel] = useState(item?.rappel !== false)
 
   const d = new Date(date + 'T00:00:00')
   const dateStr = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -85,6 +86,43 @@ export default function PersoEditSheet({ date, item, onClose, onSave }) {
           onBlur={e  => e.target.style.borderColor = C.border}
         />
 
+        {/* Toggle rappel */}
+        <div
+          onClick={() => setRappel(r => !r)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px', borderRadius: 12, marginBottom: 18,
+            background: C.surface2, border: `1px solid ${rappel ? C.accent : C.border}`,
+            cursor: 'pointer', transition: 'border .15s',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>🔔</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'DM Sans',sans-serif" }}>
+                Me rappeler
+              </div>
+              <div style={{ fontSize: 11, color: C.muted }}>
+                Veille à 20h · Jour J à 8h
+              </div>
+            </div>
+          </div>
+          {/* Toggle pill */}
+          <div style={{
+            width: 44, height: 26, borderRadius: 13,
+            background: rappel ? C.accent : C.surface3,
+            position: 'relative', transition: 'background .2s', flexShrink: 0,
+          }}>
+            <div style={{
+              position: 'absolute', top: 3,
+              left: rappel ? 21 : 3,
+              width: 20, height: 20, borderRadius: '50%',
+              background: '#fff', transition: 'left .2s',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            }} />
+          </div>
+        </div>
+
         <FieldLabel>Pour qui ?</FieldLabel>
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[
@@ -120,7 +158,7 @@ export default function PersoEditSheet({ date, item, onClose, onSave }) {
           Annuler
         </button>
         <button
-          onClick={() => onSave({ id: item?.id || uid(), type: type || 'autre', title, heure, note, who })}
+          onClick={() => onSave({ id: item?.id || uid(), type: type || 'autre', title, heure, note, who, rappel })}
           style={{
             flex: 2, padding: '14px', background: accent,
             color: '#fff', fontWeight: 800, fontSize: 15, border: 'none',

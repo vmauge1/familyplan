@@ -4,11 +4,11 @@ importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey:            "",
-  authDomain:        "",
-  projectId:         "",
-  messagingSenderId: "",
-  appId:             "",
+  apiKey:            "AIzaSyC8tq3i1C0nQOsRIPeb7jhT9zXLYAqoliM",
+  authDomain:        "familyplan-1e5b7.firebaseapp.com",
+  projectId:         "familyplan-1e5b7",
+  messagingSenderId: "345184708787",
+  appId:             "1:345184708787:web:33afd7231bd7137609e8c6",
 });
 
 const messaging = firebase.messaging();
