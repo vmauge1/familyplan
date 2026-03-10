@@ -3,6 +3,7 @@ import { C, WORK, PERSO, MONTHS, DAYS_S, toKey, daysInMonth, firstDayOfWeek } fr
 import { useCalendarEvents } from './hooks/useCalendarEvents'
 import { useNotifications, notifyPartner } from './hooks/useNotifications'
 import DayCell        from './components/DayCell'
+import WeekView, { getMonday } from './components/WeekView'
 import WorkSheet      from './components/WorkSheet'
 import PersoListSheet from './components/PersoListSheet'
 import PersoEditSheet from './components/PersoEditSheet'
@@ -11,6 +12,8 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
   const today = new Date()
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
+  const [view,  setView]  = useState('month') // 'month' | 'week'
+  const [weekStart, setWeekStart] = useState(() => getMonday(today))
   const [time,  setTime]  = useState(new Date())
   const [toast, setToast] = useState(null)
 
@@ -31,12 +34,20 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
   }
 
   const prev = () => {
-    if (month === 0) { setMonth(11); setYear(y => y - 1) }
-    else setMonth(m => m - 1)
+    if (view === 'week') {
+      setWeekStart(d => { const n = new Date(d); n.setDate(n.getDate() - 7); return n })
+    } else {
+      if (month === 0) { setMonth(11); setYear(y => y - 1) }
+      else setMonth(m => m - 1)
+    }
   }
   const next = () => {
-    if (month === 11) { setMonth(0); setYear(y => y + 1) }
-    else setMonth(m => m + 1)
+    if (view === 'week') {
+      setWeekStart(d => { const n = new Date(d); n.setDate(n.getDate() + 7); return n })
+    } else {
+      if (month === 11) { setMonth(0); setYear(y => y + 1) }
+      else setMonth(m => m + 1)
+    }
   }
 
   const senderName = userName || user?.email?.split('@')[0] || 'Quelqu\'un'
@@ -122,16 +133,50 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
           </div>
         </div>
 
-        {/* ── Month nav ── */}
+        {/* ── Toggle vue ── */}
+        <div style={{ display: 'flex', gap: 4, padding: '8px 2px 0', marginBottom: 4 }}>
+          {['month', 'week'].map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                flex: 1, padding: '8px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: view === v ? C.accent : C.surface2,
+                color: view === v ? '#fff' : C.muted,
+                fontWeight: 700, fontSize: 13, fontFamily: "'DM Sans',sans-serif",
+                transition: 'all .15s',
+              }}
+            >
+              {v === 'month' ? '📅 Mois' : '📆 Semaine'}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Nav ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0 16px' }}>
           <button onClick={prev} style={{ background: 'none', border: 'none', color: C.accent, fontSize: 22, cursor: 'pointer', padding: '4px 8px' }}>‹</button>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: C.text, letterSpacing: '-0.5px', fontFamily: "'DM Sans',sans-serif" }}>
-              {MONTHS[month]}
-            </div>
-            <div style={{ fontSize: 12, color: C.muted, fontWeight: 500, marginTop: 3 }}>
-              {year}
-            </div>
+            {view === 'month' ? (
+              <>
+                <div style={{ fontSize: 24, fontWeight: 800, color: C.text, letterSpacing: '-0.5px', fontFamily: "'DM Sans',sans-serif" }}>
+                  {MONTHS[month]}
+                </div>
+                <div style={{ fontSize: 12, color: C.muted, fontWeight: 500, marginTop: 3 }}>
+                  {year}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 800, color: C.text, letterSpacing: '-0.3px', fontFamily: "'DM Sans',sans-serif" }}>
+                  {weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                  {' — '}
+                  {new Date(weekStart.getTime() + 6 * 86400000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                </div>
+                <div style={{ fontSize: 12, color: C.muted, fontWeight: 500, marginTop: 3 }}>
+                  {weekStart.getFullYear()}
+                </div>
+              </>
+            )}
           </div>
           <button onClick={next} style={{ background: 'none', border: 'none', color: C.accent, fontSize: 22, cursor: 'pointer', padding: '4px 8px' }}>›</button>
         </div>
@@ -151,6 +196,15 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
           ))}
         </div>
 
+        {view === 'week' ? (
+          <WeekView
+            weekStart={weekStart}
+            events={events}
+            onWork={(key, ev) => setWork({ date: key, ev })}
+            onPerso={key => setPerso({ date: key, mode: 'list', editItem: null })}
+          />
+        ) : (
+        <>
         {/* ── Day headers ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', marginBottom: 8, padding: '0 1px' }}>
           {DAYS_S.map((d, i) => (
@@ -180,6 +234,8 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
             )
           })}
         </div>
+        </>
+        )}
 
         {/* ── Legend ── */}
         <div style={{ marginTop: 24, background: C.surface, borderRadius: 16, padding: '16px', border: `1px solid ${C.border}` }}>
