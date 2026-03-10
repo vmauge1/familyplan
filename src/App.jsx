@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { C, WORK, PERSO, MONTHS, DAYS_S, toKey, daysInMonth, firstDayOfWeek } from './lib/constants'
 import { useCalendarEvents } from './hooks/useCalendarEvents'
 import { useNotifications, notifyPartner } from './hooks/useNotifications'
-import DayCell        from './components/DayCell'
+import { useAnniversaires } from './hooks/useAnniversaires'
+import DayCell              from './components/DayCell'
 import WeekView, { getMonday } from './components/WeekView'
-import WorkSheet      from './components/WorkSheet'
-import PersoListSheet from './components/PersoListSheet'
-import PersoEditSheet from './components/PersoEditSheet'
+import WorkSheet            from './components/WorkSheet'
+import PersoListSheet       from './components/PersoListSheet'
+import PersoEditSheet       from './components/PersoEditSheet'
+import AnniversairesSheet   from './components/AnniversairesSheet'
+import SearchSheet          from './components/SearchSheet'
 
 export default function FamilyPlan({ user, userName, onSignOut }) {
   const today = new Date()
@@ -19,8 +22,12 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
 
   const [workSheet,  setWork]  = useState(null)  // { date, ev }
   const [persoSheet, setPerso] = useState(null)  // { date, mode:'list'|'edit', editItem }
+  const [showAnniv,  setShowAnniv]  = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const calRef = useRef(null)
 
   const { events, saveDay, synced } = useCalendarEvents()
+  const { anniversaires, add: addAnniv, remove: removeAnniv, forDay } = useAnniversaires()
   useNotifications(user)
 
   useEffect(() => {
@@ -76,6 +83,28 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
     const cur = events[date] || {}
     saveDay(date, { ...cur, P: (cur.P || []).filter(e => e.id !== id) })
     showToast('Événement supprimé')
+  }
+
+  const handleDayClick = dateKey => {
+    const [y, m, d] = dateKey.split('-').map(Number)
+    setYear(y); setMonth(m - 1)
+    setView('month')
+  }
+
+  const exportPDF = async () => {
+    showToast('Export en cours…')
+    const { default: jsPDF } = await import('jspdf')
+    const { default: html2canvas } = await import('html2canvas')
+    const el = calRef.current
+    if (!el) return
+    const canvas = await html2canvas(el, { backgroundColor: '#0D1117', scale: 2 })
+    const img = canvas.toDataURL('image/png')
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pw = pdf.internal.pageSize.getWidth()
+    const ph = (canvas.height / canvas.width) * pw
+    pdf.addImage(img, 'PNG', 0, 0, pw, Math.min(ph, pdf.internal.pageSize.getHeight()))
+    pdf.save(`planning-${MONTHS[month].toLowerCase()}-${year}.pdf`)
+    showToast('PDF téléchargé ✓')
   }
 
   // Calendar grid
@@ -152,6 +181,28 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
           ))}
         </div>
 
+        {/* ── Actions toolbar ── */}
+        <div style={{ display: 'flex', gap: 6, padding: '4px 2px 0', marginBottom: 4 }}>
+          {[
+            { icon: '🔍', label: 'Recherche', action: () => setShowSearch(true) },
+            { icon: '🎉', label: 'Anniversaires', action: () => setShowAnniv(true) },
+            { icon: '📄', label: 'Export PDF', action: exportPDF },
+          ].map(btn => (
+            <button
+              key={btn.label}
+              onClick={btn.action}
+              style={{
+                flex: 1, padding: '7px 4px', borderRadius: 10, border: `1px solid ${C.border}`,
+                cursor: 'pointer', background: C.surface,
+                color: C.muted, fontWeight: 600, fontSize: 12,
+                fontFamily: "'DM Sans',sans-serif", transition: 'all .15s',
+              }}
+            >
+              {btn.icon} {btn.label}
+            </button>
+          ))}
+        </div>
+
         {/* ── Nav ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0 16px' }}>
           <button onClick={prev} style={{ background: 'none', border: 'none', color: C.accent, fontSize: 22, cursor: 'pointer', padding: '4px 8px' }}>‹</button>
@@ -196,6 +247,7 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
           ))}
         </div>
 
+        <div ref={calRef}>
         {view === 'week' ? (
           <WeekView
             weekStart={weekStart}
@@ -230,12 +282,14 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
                 isWeekend={dow >= 5}
                 onWork={() => setWork({ date: key, ev })}
                 onPerso={() => setPerso({ date: key, mode: 'list', editItem: null })}
+                anniversaires={forDay(key)}
               />
             )
           })}
         </div>
         </>
         )}
+        </div>
 
         {/* ── Legend ── */}
         <div style={{ marginTop: 24, background: C.surface, borderRadius: 16, padding: '16px', border: `1px solid ${C.border}` }}>
@@ -296,6 +350,23 @@ export default function FamilyPlan({ user, userName, onSignOut }) {
               : handleAdd(persoSheet.date, item)
             setPerso(s => ({ ...s, mode: 'list', editItem: null }))
           }}
+        />
+      )}
+
+      {showAnniv && (
+        <AnniversairesSheet
+          anniversaires={anniversaires}
+          onClose={() => setShowAnniv(false)}
+          onAdd={addAnniv}
+          onDelete={removeAnniv}
+        />
+      )}
+
+      {showSearch && (
+        <SearchSheet
+          events={events}
+          onClose={() => setShowSearch(false)}
+          onDayClick={dateKey => { handleDayClick(dateKey); setShowSearch(false) }}
         />
       )}
     </div>

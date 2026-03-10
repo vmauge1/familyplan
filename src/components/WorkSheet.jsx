@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { C, WORK } from '../lib/constants'
-import { SheetOverlay, SheetHeader } from './SheetOverlay'
+import { SheetOverlay, SheetHeader, FieldLabel } from './SheetOverlay'
 
 export default function WorkSheet({ date, ev, onClose, onSave }) {
-  const [vSel, setV] = useState(ev?.V || null)
-  const [fSel, setF] = useState(ev?.F || null)
+  const [vSel, setV] = useState(ev?.V    || null)
+  const [fSel, setF] = useState(ev?.F    || null)
+  const [note, setNote] = useState(ev?.note || '')
+  const [focus, setFocus] = useState(false)
 
   const d = new Date(date + 'T00:00:00')
   const dateStr = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -37,8 +39,7 @@ export default function WorkSheet({ date, ev, onClose, onSave }) {
                     fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer',
                     fontFamily: "'DM Sans',sans-serif",
                     outline: sel === key ? `2px solid ${t.bg}` : 'none',
-                    outlineOffset: 2,
-                    transition: 'all .12s',
+                    outlineOffset: 2, transition: 'all .12s',
                   }}
                 >
                   {t.label}
@@ -47,12 +48,7 @@ export default function WorkSheet({ date, ev, onClose, onSave }) {
               {sel && (
                 <button
                   onClick={() => set(null)}
-                  style={{
-                    padding: '9px 14px', borderRadius: 10,
-                    background: C.surface3, color: C.muted,
-                    fontWeight: 600, fontSize: 12, border: 'none', cursor: 'pointer',
-                    fontFamily: "'DM Sans',sans-serif",
-                  }}
+                  style={{ padding: '9px 14px', borderRadius: 10, background: C.surface3, color: C.muted, fontWeight: 600, fontSize: 12, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
                 >
                   ✕ Effacer
                 </button>
@@ -60,11 +56,33 @@ export default function WorkSheet({ date, ev, onClose, onSave }) {
             </div>
           </div>
         ))}
+
+        {/* Note du jour */}
+        <div style={{ marginBottom: 20 }}>
+          <FieldLabel>📝 Note du jour</FieldLabel>
+          <textarea
+            placeholder="Je rentre tard ce soir, peux-tu aller chercher les enfants ?"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            rows={3}
+            style={{
+              width: '100%', padding: '13px 15px', borderRadius: 11,
+              background: C.surface2, color: C.text,
+              border: `1.5px solid ${focus ? C.accent : C.border}`,
+              fontSize: 14, outline: 'none', resize: 'none',
+              boxSizing: 'border-box', fontFamily: "'DM Sans',sans-serif",
+              transition: 'border .15s',
+              boxShadow: focus ? '0 0 0 3px rgba(47,129,247,0.1)' : 'none',
+            }}
+            onFocus={() => setFocus(true)}
+            onBlur={() => setFocus(false)}
+          />
+        </div>
       </div>
 
       <div style={{ padding: '16px 22px 36px', flexShrink: 0 }}>
         <button
-          onClick={() => { onSave(date, { V: vSel, F: fSel, P: ev?.P || [] }); onClose() }}
+          onClick={() => { onSave(date, { V: vSel, F: fSel, P: ev?.P || [], note }); onClose() }}
           style={{
             width: '100%', padding: '15px', background: C.accent,
             color: '#fff', fontWeight: 800, fontSize: 16, border: 'none',
