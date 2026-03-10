@@ -7,7 +7,7 @@ import WorkSheet      from './components/WorkSheet'
 import PersoListSheet from './components/PersoListSheet'
 import PersoEditSheet from './components/PersoEditSheet'
 
-export default function FamilyPlan({ user, onSignOut }) {
+export default function FamilyPlan({ user, userName, onSignOut }) {
   const today = new Date()
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -39,7 +39,7 @@ export default function FamilyPlan({ user, onSignOut }) {
     else setMonth(m => m + 1)
   }
 
-  const senderName = user?.email?.split('@')[0] ?? 'Quelqu\'un'
+  const senderName = userName || user?.email?.split('@')[0] || 'Quelqu\'un'
 
   const handleWorkSave = (date, data) => {
     saveDay(date, data)
@@ -103,7 +103,7 @@ export default function FamilyPlan({ user, onSignOut }) {
         {/* ── Status bar ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 4px 0', marginBottom: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: "'DM Mono',monospace" }}>
-            {time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            {userName ? `👋 ${userName}` : time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
           </span>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
